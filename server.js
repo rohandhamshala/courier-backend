@@ -23,7 +23,6 @@ app.get('/',(req,res)=>{
 app.use(bodyParser.json());
 app.use(authRoutes);
 app.use(userRoutes);
-require("./app/routers/customerRouter")(app);
 require("./app/routers/roleRouter")(app);
 
 //uncomment to create tables
