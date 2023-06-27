@@ -8,7 +8,7 @@ const userRoutes  = require("./app/routers/userRouter");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3200;
+const PORT = 3201;
 
 let corsOptions = {
   origin: "*",
@@ -23,7 +23,8 @@ app.get('/',(req,res)=>{
 app.use(bodyParser.json());
 app.use(authRoutes);
 app.use(userRoutes);
-// app.use('/events',eventRoutes);
+require("./app/routers/customerRouter")(app);
+require("./app/routers/roleRouter")(app);
 
 //uncomment to create tables
 

@@ -1,5 +1,6 @@
-const User = require('../models/user');
-const Session = require('../models/session');
+const db = require("../models");
+const User = db.user;
+const Session = db.session;
 const { hashPassword } = require("./crypto");
 
 /**

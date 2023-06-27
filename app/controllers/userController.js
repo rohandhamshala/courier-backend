@@ -1,98 +1,120 @@
-const User = require('../models/user');
-const Session = require('../models/session');
-const sequelize = require('../config/database');
-const Op = sequelize.Op;
+const db = require("../models");
+const User = db.user;
+const Session = db.session;
+const sequelize = db.sequelize;
+const Op = db.Sequelize.Op;
 const { encrypt, getSalt, hashPassword } = require("../authentication/crypto");
 
 // Create and Save a new User
 exports.create = async (req, res) => {
-  console.log("user",req.body)
-  // Validate request
-  if (req.body.firstName === undefined) {
-    const error = new Error("First name cannot be empty for user!");
-    error.statusCode = 400;
-    throw error;
-  } else if (req.body.lastName === undefined) {
-    const error = new Error("Last name cannot be empty for user!");
-    error.statusCode = 400;
-    throw error;
-  } else if (req.body.email === undefined) {
-    const error = new Error("Email cannot be empty for user!");
-    error.statusCode = 400;
-    throw error;
-  } else if (req.body.password === undefined) {
-    const error = new Error("Password cannot be empty for user!");
-    error.statusCode = 400;
-    throw error;
-  }
+  try {
+    console.log("user",req.body)
+    // Validate request
+    if (req.body.firstName === undefined) {
+      const error = new Error("First name cannot be empty for user!");
+      error.statusCode = 400;
+      throw error;
+    } else if (req.body.lastName === undefined) {
+      const error = new Error("Last name cannot be empty for user!");
+      error.statusCode = 400;
+      throw error;
+    } else if (req.body.email === undefined) {
+      const error = new Error("Email cannot be empty for user!");
+      error.statusCode = 400;
+      throw error;
+    } else if (req.body.password === undefined) {
+      const error = new Error("Password cannot be empty for user!");
+      error.statusCode = 400;
+      throw error;
+    }
+    else if (req.body.mobile === undefined) {
+      const error = new Error("mobile cannot be empty for user!");
+      error.statusCode = 400;
+      throw error;
+    }
+    else if (req.body.role_id === undefined) {
+      const error = new Error("role id cannot be empty for user!");
+      error.statusCode = 400;
+      throw error;
+    }
 
-  // find by email
-  await User.findOne({
-    where: {
-      email: req.body.email,
-    },
-  })
-    .then(async (data) => {
-      if (data) {
-        res.status(500).send({
-          message: "This email is already in use.",
-        });
-      } else {
-        console.log("email not found");
-        let salt = await getSalt();
-        let hash = await hashPassword(req.body.password, salt);
-
-        // Create a User
-        const user = {
-          id: req.body.id,
-          firstName: req.body.firstName,
-          lastName: req.body.lastName,
-          email: req.body.email,
-          isAdmin: req.body.isAdmin || 0,
-          password: hash,
-          salt: salt,
-        };
-
-        // Save User in the database
-        await User.create(user)
-          .then(async (data) => {
-            // Create a Session for the new user
-            let userId = data.id;
-
-            let expireTime = new Date();
-            expireTime.setDate(expireTime.getDate() + 1);
-
-            const session = {
-              email: req.body.email,
-              userId: userId,
-              expirationDate: expireTime,
-            };
-            await Session.create(session).then(async (data) => {
-              let sessionId = data.id;
-              let token = await encrypt(sessionId);
-              let userInfo = {
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                id: user.id,
-                token: token,
-                isAdmin: user.isAdmin || 0
-              };
-              res.send(userInfo);
-            });
-          })
-          .catch((err) => {
-            console.log(err);
-            res.status(500).send({
-              message:
-                err.message || "Some error occurred while creating the User.",
-            });
-          });
-      }
+    // find by email
+    await User.findOne({
+      where: {
+        email: req.body.email,
+      },
     })
-    .catch((err) => {
-      return err.message || "Error retrieving User with email=" + email;
-    });
+      .then(async (data) => {
+        if (data) {
+          res.status(500).send({
+            message: "This email is already in use.",
+          });
+        } else {
+          console.log("email not found");
+          let salt = await getSalt();
+          let hash = await hashPassword(req.body.password, salt);
+
+          // Create a User
+          const user = {
+            id: req.body.id,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            password: hash,
+            roleId: req.body.role_id,
+            availabilty: 0,
+            mobile: req.body.mobile,
+            salt: salt,
+          };
+
+          // Save User in the database
+          await User.create(user)
+            .then(async (data) => {
+              // Create a Session for the new user
+              let userId = data.id;
+
+              let expireTime = new Date();
+              expireTime.setDate(expireTime.getDate() + 1);
+
+              const session = {
+                email: req.body.email,
+                userId: userId,
+                expirationDate: expireTime,
+              };
+              await Session.create(session).then(async (data) => {
+                let sessionId = data.id;
+                let token = await encrypt(sessionId);
+                let userInfo = {
+                  email: user.email,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  id: user.id,
+                  token: token,
+                  availabilty: user.availabilty,
+                  role_id: user.roleId,
+                  mobile: user.mobile
+                };
+                res.send(userInfo);
+              });
+            })
+            .catch((err) => {
+              console.log(err);
+              res.status(500).send({
+                message:
+                  err.message || "Some error occurred while creating the User.",
+              });
+            });
+        }
+      })
+      .catch((err) => {
+        return err.message || "Error retrieving User with email=" + email;
+      });
+    }
+    catch(err) {
+      res.status(500).send({
+        message: err.message || "Error Creating User",
+      });
+    }
 };
 
 // Retrieve all Users from the database.
@@ -224,3 +246,104 @@ exports.deleteAll = (req, res) => {
       });
     });
 };
+
+exports.findAllAdmins = (req,res) => {
+
+  const condition = {
+    roleId: 1 // Condition to check if role equals 1 (admin)
+  };
+
+  User.findAll({ where: condition })
+  .then((data) => {
+    res.send(data);
+  })
+  .catch((err) => {
+    res.status(500).send({
+      message: err.message || "Some error occurred while retrieving admins.",
+    });
+  });
+}
+
+exports.findAllClerks = (req,res) => {
+
+  const condition = {
+    roleId: 2 // Condition to check if role equals 2 (clerk)
+  };
+
+  User.findAll({ where: condition })
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving clerks.",
+      });
+    });
+
+}
+
+exports.findAllDeliveryBoys = (req,res) => {
+  const condition = {
+    roleId: 3 // Condition to check if role equals 3 (delivery boy)
+  };
+  User.findAll({ where: condition })
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving delivery boys.",
+      });
+    });
+
+}
+
+exports.findAllUnverified = (req,res) => {
+  const condition = {
+    is_verified: 0
+  };
+  User.findAll({ where: condition })
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving unverifed users.",
+      });
+    });
+
+}
+
+exports.findAllAvailableDeliveryBoys = (req,res) => {
+  const condition = {
+    is_verified: 1,
+    roleId: 3,
+    availabilty: 1
+  };
+  User.findAll({ where: condition })
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving available delivery boys.",
+      });
+    });
+}
+
+exports.findAllUnavailableDeliveryBoys = (req,res) => {
+  const condition = {
+    is_verified: 1,
+    roleId: 3,
+    availabilty: 0
+  };
+  User.findAll({ where: condition })
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving available delivery boys.",
+      });
+    });
+}

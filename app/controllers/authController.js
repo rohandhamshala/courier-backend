@@ -1,6 +1,7 @@
 
-const User = require('../models/user');
-const Session = require('../models/session');
+const db = require("../models");
+const User = db.user;
+const Session = db.session;
 const { authenticate } = require("../authentication/authentication")
 const { encrypt } = require("../authentication/crypto")
 
@@ -12,7 +13,6 @@ exports.login = async (req, res) => {
     await User.findByPk(userId).then((data) => {
       user = data;
     });
-
     let expireTime = new Date();
     expireTime.setDate(expireTime.getDate() + 1);
 
@@ -28,9 +28,11 @@ exports.login = async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        isAdmin: user.isAdmin || 0,
         id: user.id,
         token: token,
+        availabilty: user.availabilty,
+        role_id: user.roleId,
+        mobile: user.mobile
       };
       res.send(userInfo);
     });
@@ -47,6 +49,7 @@ exports.logout = async (req, res) => {
   ) {
     let token = auth.slice(7);
     let sessionId = await decrypt(token);
+    await User.update({ availabilty: 0 }, {where: { id: 1 }})
     if (sessionId == null) return;
     return await Session.destroy({ where: { id: sessionId } }).catch(
       (error) => {
