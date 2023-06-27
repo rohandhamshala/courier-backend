@@ -8,7 +8,7 @@ const userRoutes  = require("./app/routers/userRouter");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3201;
+const PORT = 3200;
 
 let corsOptions = {
   origin: "*",
