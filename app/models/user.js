@@ -29,10 +29,7 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.BLOB,
       allowNull: false,
     },
-    is_verified: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-    },
+
     availabilty: {
       type: Sequelize.INTEGER,
       allowNull: false,
