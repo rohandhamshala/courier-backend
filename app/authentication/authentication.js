@@ -32,7 +32,10 @@ authenticate = async (req, res, require = true) => {
         });
       if (user != null) {
         let hash = await hashPassword(password, user.salt);
+        console.log("user pass",user.password);
+        console.log("salt",user.salt);
         if (Buffer.compare(user.password, hash) !== 0) {
+          console.log("invalid");
           return res.status(401).send({
             message: "Invalid password!",
           });
