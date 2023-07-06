@@ -299,9 +299,7 @@ exports.findAllDeliveryBoys = (req,res) => {
 }
 
 exports.findAllUnverified = (req,res) => {
-  const condition = {
-    is_verified: 0
-  };
+  const condition = {  };
   User.findAll({ where: condition })
     .then((data) => {
       res.send(data);
@@ -316,7 +314,6 @@ exports.findAllUnverified = (req,res) => {
 
 exports.findAllAvailableDeliveryBoys = (req,res) => {
   const condition = {
-    is_verified: 1,
     roleId: 3,
     availabilty: 1
   };
@@ -333,7 +330,6 @@ exports.findAllAvailableDeliveryBoys = (req,res) => {
 
 exports.findAllUnavailableDeliveryBoys = (req,res) => {
   const condition = {
-    is_verified: 1,
     roleId: 3,
     availabilty: 0
   };
