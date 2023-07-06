@@ -32,6 +32,7 @@ module.exports = (sequelize, Sequelize) => {
         delivered_at: {
             type: Sequelize.DATE,
             allowNull: true,
+            defaultValue: '2023-09-09'
         }
     },
     {

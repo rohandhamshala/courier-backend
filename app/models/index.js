@@ -20,6 +20,7 @@ db.customer = require("./customer.js")(sequelize, Sequelize);
 db.payment = require("./payment.js")(sequelize, Sequelize);
 db.order = require("./order.js")(sequelize, Sequelize);
 db.role = require("./role.js")(sequelize, Sequelize);
+db.graph = require("./graph.js")(sequelize, Sequelize);
 
 // foreign key for session
 db.user.hasMany(
@@ -95,5 +96,10 @@ db.order.belongsTo(db.customer, {
 db.order.belongsTo(db.customer, {
   foreignKey: 'delivery_customer_id', // Foreign key in the Payment model referencing the User model
   as: 'delivery_customer'
+});
+
+db.order.belongsTo(db.user, {
+  foreignKey: 'delivery_boy_id', // Foreign key in the Payment model referencing the User model
+  as: 'delivery_boy_details'
 });
 module.exports = db;
