@@ -4,7 +4,10 @@ const Customer = db.customer;
 const Graph = db.graph;
 const Op = db.Sequelize.Op;
 const User = db.user;
+const Sequelize = db.Sequelize;
 const moment = require('moment');
+const { checkDeliveredInTime, sendOrderConfirmationEmail,sendOrderDeliveredEmail,sendOrderPickedupEmail } = require("../utils")
+
 
 // Create and Save a new order
 exports.create = (req, res) => {
@@ -35,12 +38,14 @@ exports.create = (req, res) => {
     throw error;
   } 
 
-  req.body.price_for_delivery_boy = req.body.price_for_order * 0.2
-  req.body.status = "PENDING" 
+  req.body.price_for_delivery_boy = req.body.price_for_order * 0.15
+  req.body.status = "PENDING"
+ 
   // Save order in the database
   Order.create(req.body)
     .then((data) => {
       res.send(data);
+      sendOrderConfirmationEmail(data)
     })
     .catch((err) => {
       res.status(500).send({
@@ -62,10 +67,12 @@ exports.calculate = async(req, res) => {
     throw error;
   }
   const shortestDistance = await findShortestPath(req.body.pickup_address,req.body.delivery_address)
+  // Do Calculations
   if(shortestDistance) {
     res.send({
       price_for_order: shortestDistance * 3,
-      minimum_time: shortestDistance * 1.5,
+      // minimum_time: shortestDistance * 1.5,
+      minimum_time: 1,
       distance: shortestDistance
     });
   }
@@ -120,7 +127,7 @@ exports.search = (req, res) => {
 exports.findOne = (req, res) => {
   const id = req.params.id;
 
-  Order.findByPk(id)
+  Order.findByPk(id,{ include: [  { model: Customer, as: 'pickup_customer' },{ model: Customer, as: 'delivery_customer' },{ model: User, as: 'delivery_boy_details' },{ model: User, as: 'clerk_details' }] })
     .then((data) => {
         if (data) {
             res.json(data);
@@ -158,6 +165,72 @@ exports.update = (req, res) => {
         message: err.message || "Error updating order with id=" + id,
       });
     });
+};
+
+exports.pickedup  = async(req, res) => {
+  try{
+  const id = req.params.id;
+  const order = await Order.findByPk(id)
+  Order.update({pickedup_at: Sequelize.literal('CURRENT_TIMESTAMP'),status:"PROGRESS"}, {
+    where: { id: id },
+  })
+    .then((response) => {
+      if (response == 1) {
+        res.send({
+          message: "order was updated successfully.",
+        });
+        sendOrderPickedupEmail(order)
+      } else {
+        res.send({
+          message: `Cannot update order with id=${id}. Maybe order was not found or req.body is empty!`,
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Error updating order with id=" + id,
+      });
+    });
+  }
+  catch(e) {
+    res.status(500).send({
+      message: e.message || "Error updating order with id=" + id,
+    });
+  }
+};
+
+exports.delivered  = async(req, res) => {
+  try {
+  const id = req.params.id;
+  const order  = await Order.findByPk(id)
+  const current_time = new Date();
+  const deliveredInTime = checkDeliveredInTime(order.pickedup_at,current_time,order.minimum_time)
+  Order.update({ delivered_at: Sequelize.literal('CURRENT_TIMESTAMP'),status:"DELIVERED",delivered_in_time: deliveredInTime ? "YES" : "NO", delivery_boy_bonus: deliveredInTime ? order.price_for_order*0.1 : 0 }, {
+    where: { id: id },
+  })
+    .then((response) => {
+      if (response == 1) {
+        res.send({
+          message: "order was updated successfully.",
+        });
+        sendOrderDeliveredEmail(order)
+      } else {
+        res.send({
+          message: `Cannot update order with id=${id}. Maybe order was not found or req.body is empty!`,
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Error updating order with id=" + id,
+      });
+    });
+  }
+  catch(e) {
+    res.status(500).send({
+      message: e.message || "Error updating order with id=" + id,
+    });
+  }
 };
 
 // Delete a order with the specified id in the request
@@ -207,8 +280,14 @@ exports.getOrdersDeliveryByUser = (req,res) => {
   const status = req.query.status;
   const condition = {
     delivery_boy_id: id,
-    status: status
   };
+  if(status && status == "DELIVERED") {
+    condition.status = status
+  } else if(status && status == "NOT_DELIVERED") {
+    condition.status = { [Op.in]: ["PENDING", "PROGRESS"] };
+  } else if(status) {
+    condition.status = status
+  }
   Order.findAll({ where: condition, include: [  { model: Customer, as: 'pickup_customer' },{ model: Customer, as: 'delivery_customer' },{ model: User, as: 'delivery_boy_details' }] })
     .then((data) => {
       res.send(data);
@@ -328,24 +407,6 @@ exports.getPresentWeekOrders = (req, res) => {
       });
     });
 };
-
-// Graph representation
-// const graph = {
-//   '1A': { '2A': 1, '1B': 1 },
-//   '1B': { '1A': 1, '2B': 1 },
-//   '2A': { '1A': 1, '3A': 1, '2B': 1 },
-//   '2B': { '1B': 1, '2A': 1, '3B': 1 },
-//   '3A': { '2A': 1, '4A': 1, '3B': 1 },
-//   '3B': { '2B': 1, '3A': 1, '4B': 1 },
-//   '4A': { '3A': 1, '5A': 1, '4B': 1 },
-//   '4B': { '3B': 1, '4A': 1, '5B': 1 },
-//   '5A': { '4A': 1, '6A': 1, '5B': 1 },
-//   '5B': { '4B': 1, '5A': 1, '6B': 1 },
-//   '6A': { '5A': 1, '7A': 1, '6B': 1 },
-//   '6B': { '5B': 1, '6A': 1, '7B': 1 },
-//   '7A': { '6A': 1, '7B': 1 },
-//   '7B': { '6B': 1, '7A': 1 },
-// };
 
 // Function to find the shortest path using Dijkstra's algorithm
 async function findShortestPath(source, destination) {
