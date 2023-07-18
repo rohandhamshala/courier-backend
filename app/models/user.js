@@ -29,7 +29,6 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.BLOB,
       allowNull: false,
     },
-
     availabilty: {
       type: Sequelize.INTEGER,
       allowNull: false,
