@@ -10,19 +10,19 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false,
         },
         price_for_order: {
-            type: Sequelize.STRING,
+            type: Sequelize.FLOAT,
             allowNull: false,
         },
         minimum_time: {
-            type: Sequelize.STRING,
+            type: Sequelize.FLOAT,
             allowNull: false,
         },
         price_for_delivery_boy: {
-            type: Sequelize.STRING,
+            type: Sequelize.FLOAT,
             allowNull: false,
         },
         distance: {
-            type: Sequelize.STRING,
+            type: Sequelize.FLOAT,
             allowNull: false,
         },
         status: {
@@ -31,8 +31,20 @@ module.exports = (sequelize, Sequelize) => {
         },
         delivered_at: {
             type: Sequelize.DATE,
+            allowNull: true,     
+        },
+        pickedup_at: {
+            type: Sequelize.DATE,
+            allowNull: true,     
+        },
+        delivered_in_time: {
+            type: Sequelize.STRING,
             allowNull: true,
-            defaultValue: '2023-09-09'
+        },
+        delivery_boy_bonus: {
+            type: Sequelize.FLOAT,
+            allowNull: false,
+            defaultValue: 0
         }
     },
     {

@@ -102,4 +102,8 @@ db.order.belongsTo(db.user, {
   foreignKey: 'delivery_boy_id', // Foreign key in the Payment model referencing the User model
   as: 'delivery_boy_details'
 });
+db.order.belongsTo(db.user, {
+  foreignKey: 'user_id', // Foreign key in the Payment model referencing the User model
+  as: 'clerk_details'
+});
 module.exports = db;

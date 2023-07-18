@@ -21,10 +21,16 @@
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "googleapis": "^118.0.0",
+    "handlebars": "^4.7.7",
+    "html-pdf": "^3.0.1",
     "jest": "^29.3.1",
     "jsonwebtoken": "^9.0.0",
+    "moment": "^2.29.4",
     "mysql2": "^3.2.3",
+    "nodemailer": "^6.9.3",
     "parse": "^4.0.1",
+    "path": "^0.12.7",
+    "pdfkit": "^0.13.0",
     "sequelize": "^6.19.0",
     "supertest": "^6.3.3"
   }
