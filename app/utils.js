@@ -22,14 +22,14 @@ exports.sendMail = (invoiceHtml,to,subject) => {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-          user: 'email',
-          pass: 'password'
+          user: 'r.dhamshala@eagles.oc.edu',
+          pass: 'xsiupikjmtenbxws'
         }
       });
     
       // Define the email options
       const mailOptions = {
-        from: 'email',
+        from: 'r.dhamshala@eagles.oc.edu',
         to,
         subject,
         html: invoiceHtml
@@ -214,14 +214,14 @@ exports.sendInvoiceEmail = async(customerEmail, orderId) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-          user: 'email',
-          pass: 'password'
+          user: 'r.dhamshala@eagles.oc.edu',
+          pass: 'xsiupikjmtenbxws'
         }
       });
 
     // Define the email content
     const mailOptions = {
-      from: 'email',
+      from: 'r.dhamshala@eagles.oc.edu',
       to: customerEmail,
       subject: 'Invoice for Your Order',
       text: `Please find attached the invoice for your order with ID: ${orderId}`,
