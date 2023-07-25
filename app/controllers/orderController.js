@@ -56,6 +56,7 @@ exports.create = (req, res) => {
 };
 
 exports.calculate = async(req, res) => {
+  try{
   // Validate request
  if (req.body.pickup_address === undefined) {
     const error = new Error("pickup_customer_id cannot be empty for order!");
@@ -66,13 +67,12 @@ exports.calculate = async(req, res) => {
     error.statusCode = 400;
     throw error;
   }
-  const shortestDistance = await findShortestPath(req.body.pickup_address,req.body.delivery_address)
+  const shortestDistance = await findPath(req.body.pickup_address,req.body.delivery_address)
   // Do Calculations
   if(shortestDistance) {
     res.send({
-      price_for_order: shortestDistance * 3,
-      // minimum_time: shortestDistance * 1.5,
-      minimum_time: 1,
+      price_for_order: shortestDistance * 1.5,
+      minimum_time: shortestDistance * 3,
       distance: shortestDistance
     });
   }
@@ -81,6 +81,12 @@ exports.calculate = async(req, res) => {
       message: "Error in calculating the distance",
     });
   }
+}
+catch(e){
+  res.status(500).send({
+    message: "Error in calculating the distance",
+  });
+}
 };
 
 // Retrieve all categories from the database.
@@ -407,6 +413,13 @@ exports.getPresentWeekOrders = (req, res) => {
       });
     });
 };
+
+async function findPath(source,destination) {
+  const pickupDistance = await findShortestPath('3C',source);
+  const deliveryDistance = await findShortestPath(source,destination);
+  const returnToOfc = await findShortestPath(destination,'3C');
+  return pickupDistance+deliveryDistance+returnToOfc;
+}
 
 // Function to find the shortest path using Dijkstra's algorithm
 async function findShortestPath(source, destination) {
