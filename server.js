@@ -28,6 +28,7 @@ require("./app/routers/customerRouter")(app);
 require("./app/routers/orderRouter")(app);
 require("./app/routers/paymentRouter")(app);
 require("./app/routers/roleRouter")(app);
+require("./app/routers/reportRouter")(app);
 
 //uncomment to create tables
 
