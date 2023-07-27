@@ -533,7 +533,6 @@ async function findRoute(source, destination) {
     graph[source][destination] = weight;
   });
 
-  // Initialize distance, visited, and previous arrays
   const distances = {};
   const visited = {};
   const previous = {};
