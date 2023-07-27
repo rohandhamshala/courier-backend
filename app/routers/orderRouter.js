@@ -5,6 +5,7 @@ module.exports = (app) => {
   // Create a new order
   router.post("/orders/", Order.create);
   router.post("/orders/calculate", Order.calculate);
+  router.post("/orders/route", Order.findRoute);
 
   // search order
   router.get("/orders/search", Order.search);

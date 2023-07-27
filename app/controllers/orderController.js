@@ -89,6 +89,44 @@ catch(e){
 }
 };
 
+exports.findRoute = async(req,res) => {
+  try {
+    // Validate request
+    if (req.body.pickup_address === undefined) {
+      const error = new Error("pickup_customer_id cannot be empty for order!");
+      error.statusCode = 400;
+      throw error;
+    } else if (req.body.delivery_address === undefined) {
+      const error = new Error("delivery_customer_id cannot be empty for order!");
+      error.statusCode = 400;
+      throw error;
+    }
+    const dist = await findShortestPath(req.body.pickup_address,req.body.delivery_address);
+    if(dist){
+      const officeToSource = await findRoute("3C",req.body.pickup_address);
+      const sourceToDestination = await findRoute(req.body.pickup_address,req.body.delivery_address);
+      const destinationToOffice = await findRoute(req.body.delivery_address,"3C");
+  
+      res.send({
+        officeToSource,
+        sourceToDestination,
+        destinationToOffice
+      })
+    } else {
+      res.status(500).send({
+        message: "Error in finding path",
+      })
+    }
+   
+  }
+  catch(e) {
+    res.status(500).send({
+      message: "Error in finding path",
+    });
+  }
+  
+}
+
 // Retrieve all categories from the database.
 exports.findAll = (req, res) => {
   const id = req.query.id;
@@ -478,3 +516,70 @@ async function findShortestPath(source, destination) {
   // Return the shortest distance to the destination
   return distances[destination];
 }
+
+
+// Function to find the shortest path using Dijkstra's algorithm
+async function findRoute(source, destination) {
+  // Retrieve all data from the Graph table
+  const allGraphData = await Graph.findAll();
+
+  // Form the graph using the retrieved data
+  const graph = {};
+  allGraphData.forEach((entry) => {
+    const { source, destination, weight } = entry;
+    if (!graph[source]) {
+      graph[source] = {};
+    }
+    graph[source][destination] = weight;
+  });
+
+  // Initialize distance, visited, and previous arrays
+  const distances = {};
+  const visited = {};
+  const previous = {};
+
+  // Initialize distances with Infinity and set source distance to 0
+  Object.keys(graph).forEach((vertex) => {
+    distances[vertex] = Infinity;
+  });
+  distances[source] = 0;
+
+  while (true) {
+    let closestVertex = null;
+    let closestDistance = Infinity;
+
+    // Find the closest unvisited vertex
+    Object.keys(graph).forEach((vertex) => {
+      if (!visited[vertex] && distances[vertex] < closestDistance) {
+        closestVertex = vertex;
+        closestDistance = distances[vertex];
+      }
+    });
+
+    if (closestVertex === null) {
+      break; // No reachable vertices left
+    }
+
+    // Mark the closest vertex as visited
+    visited[closestVertex] = true;
+
+    // Update distances to its neighbors
+    Object.keys(graph[closestVertex]).forEach((neighbor) => {
+      const distance = closestDistance + graph[closestVertex][neighbor];
+      if (distance < distances[neighbor]) {
+        distances[neighbor] = distance;
+        previous[neighbor] = closestVertex;
+      }
+    });
+  }
+
+  // Reconstruct the shortest path
+  const path = [destination];
+  let current = destination;
+  while (current !== source) {
+    current = previous[current];
+    path.unshift(current);
+  }
+  return path;
+}
+
